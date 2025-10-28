@@ -1,18 +1,21 @@
 import os
 
-base_dir = r"C:\report_pcd"
+# === 상대경로 기준 설정 ===
+base_dir = os.path.dirname(__file__)              # 현재 파일 기준 폴더
+report_dir = os.path.join(base_dir, "report_pcd") # report_pcd 폴더
 os.chdir(base_dir)
 
-# 최신 리포트 파일 찾기
+# === 최신 리포트 파일 찾기 ===
 html_files = sorted(
-    [f for f in os.listdir(base_dir) if f.startswith("report_pcd_") and f.endswith(".html")],
+    [f for f in os.listdir(report_dir) if f.startswith("report_pcd_") and f.endswith(".html")],
     reverse=True
 )
 if not html_files:
-    print("⚠️ HTML 파일이 없습니다.")
+    print("⚠️ report_pcd 폴더에 HTML 파일이 없습니다.")
     exit()
 
 latest_file = html_files[0]
+latest_path = os.path.join(report_dir, latest_file)
 
 # === archive.html 생성 ===
 archive_html = """<html>
@@ -30,7 +33,7 @@ archive_html = """<html>
 <ul>
 """
 for f in html_files:
-    archive_html += f'  <li><a href="{f}">{f}</a></li>\n'
+    archive_html += f'  <li><a href="report_pcd/{f}">{f}</a></li>\n'
 archive_html += """</ul>
 </body>
 </html>
@@ -41,7 +44,7 @@ with open("archive.html", "w", encoding="utf-8") as f:
 print("✅ archive.html 생성 완료")
 
 # === 최신 리포트 파일 내용 읽기 ===
-with open(latest_file, "r", encoding="utf-8") as f:
+with open(latest_path, "r", encoding="utf-8") as f:
     latest_content = f.read()
 
 # === index.html 생성 (본문 직접 삽입) ===
@@ -57,17 +60,17 @@ index_html = f"""<html>
       justify-content: space-between;
       align-items: center;
   }}
-  h21 {{ font-size: 20px; margin: 5; }}
+  h12 {{ font-size: 20px; margin: 5px 0; }}
   a {{ font-size: 16px; text-decoration: none; color: #007bff; }}
-  hr21 {{ margin: 8px 0; }}
+  hr {{ margin: 8px 0; }}
 </style>
 </head>
 <body>
 <div class="header-line">
-  <h21>최신 리포트</h21>
+  <h12>최신 리포트</h12>
   <a href="archive.html">리포트 목록</a>
 </div>
-<hr21>
+<hr>
 {latest_content}
 </body>
 </html>
