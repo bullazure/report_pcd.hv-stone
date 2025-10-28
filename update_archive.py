@@ -1,9 +1,6 @@
 import os
 import re
 
-# === 설정 ===
-IFRAME_HEIGHT = 900     # index에서 iframe 높이(px)
-
 # === 경로 설정 (상대경로 기준) ===
 base_dir = os.path.dirname(__file__)
 report_dir = os.path.join(base_dir, "report_pcd")
@@ -20,7 +17,6 @@ if not html_files:
     print("⚠️ report_pcd 폴더에 HTML 리포트가 없습니다.")
     raise SystemExit
 
-# 전체 리포트를 모두 버튼으로 표시
 latest_files = html_files
 latest_default = latest_files[0]
 
@@ -58,7 +54,7 @@ with open("archive.html", "w", encoding="utf-8") as f:
     f.write(archive_html)
 print("✅ archive.html 생성 완료")
 
-# === index.html 생성 (버튼 + iframe 방식) ===
+# === index.html 생성 (iframe 반응형) ===
 buttons_html = "".join(
     [f"<button onclick=\"showReport('report_pcd/{f}')\">{yyyymmdd(f)}</button>"
      for f in latest_files]
@@ -68,20 +64,32 @@ index_html = f"""<html>
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow">
-<title>최근 리포트</title>
+<title>리포트 전체</title>
 <style>
+  html, body {{
+    height: 100%;
+    margin: 0;
+  }}
   .shell {{
     font-family: Arial, sans-serif;
     background:#f9fafc;
-    margin:20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }}
   .header-line {{
     display:flex; justify-content:space-between; align-items:center;
-    margin-bottom:10px;
+    padding: 10px 20px; background:#fff; border-bottom:1px solid #ddd;
   }}
   .header-line h1 {{ font-size:20px; margin:0; color:#222; }}
   .header-line a {{ font-size:14px; text-decoration:none; color:#007bff; }}
   .header-line a:hover {{ text-decoration:underline; }}
+  .btns {{
+    flex-shrink: 0;
+    padding: 10px 20px;
+    background:#fff;
+    border-bottom:1px solid #ddd;
+  }}
   .btns button {{
     margin:4px; padding:6px 10px; border-radius:5px;
     border:1px solid #bbb; background:#fff; cursor:pointer; font-size:13px;
@@ -89,17 +97,27 @@ index_html = f"""<html>
   .btns button:hover {{ background:#f0f0f0; }}
   .btns button.active {{ background:#007bff; color:#fff; border-color:#007bff; }}
   #reportFrame {{
-    width:100%; height:{IFRAME_HEIGHT}px;
-    border:1px solid #ddd; border-radius:6px; background:#fff;
+    flex: 1;
+    width:100%;
+    border: none;
   }}
 </style>
 <script>
+function resizeFrame() {{
+  const frame = document.getElementById('reportFrame');
+  frame.style.height = window.innerHeight - 
+    (document.querySelector('.header-line').offsetHeight +
+     document.querySelector('.btns').offsetHeight + 10) + 'px';
+}}
+window.addEventListener('resize', resizeFrame);
+
 function showReport(url) {{
   var btns = document.querySelectorAll('.btns button');
   for (var i=0;i<btns.length;i++) btns[i].classList.remove('active');
   for (var i=0;i<btns.length;i++) if (btns[i].getAttribute('onclick').includes(url)) btns[i].classList.add('active');
   document.getElementById('reportFrame').src = url;
   document.getElementById('fallbackLink').href = url;
+  resizeFrame();
 }}
 window.onload = function() {{
   showReport('report_pcd/{latest_default}');
@@ -115,7 +133,7 @@ window.onload = function() {{
   <div class="btns">{buttons_html}</div>
 
   <iframe id="reportFrame" src="" frameborder="0"></iframe>
-  <p style="margin-top:8px;">
+  <p style="margin:8px 20px;">
     열리지 않으면 <a id="fallbackLink" href="report_pcd/{latest_default}" target="_blank">새 탭으로 열기</a>
   </p>
 </body>
@@ -125,4 +143,4 @@ window.onload = function() {{
 with open("index.html", "w", encoding="utf-8") as f:
     f.write(index_html)
 
-print(f"✅ index.html 생성 완료 (전체 {len(latest_files)}개 버튼 + iframe 전환, 기본: {latest_default})")
+print(f"✅ index.html 생성 완료 (전체 {len(latest_files)}개 + 창 크기 자동 맞춤)")
