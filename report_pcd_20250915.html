@@ -1,0 +1,551 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>월간 브랜드/유통사 평판 보고서</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f0f2f5; 
+            color: #333;
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 30px auto; 
+            padding: 30px; 
+            background-color: #fff; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+        }
+        h1 { 
+            color: #2c3e50; 
+            text-align: center; 
+            padding-bottom: 20px; 
+            border-bottom: 3px solid #f0f2f5; 
+            margin-bottom: 40px; 
+        }
+        h2 { 
+            color: #34495e; 
+            border-left: 5px solid #3498db; 
+            padding-left: 10px; 
+            margin-bottom: 25px; 
+        }
+        h3 { 
+            color: #555; 
+            margin-top: 0; 
+        }
+        .section-box { 
+            margin-bottom: 50px; 
+            padding: 30px; 
+            border: 1px solid #e1e8ed; 
+            border-radius: 10px; 
+            background-color: #fafbfd; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .chart-box { 
+            width: 100%; 
+            max-height: 400px;
+            margin-bottom: 30px; 
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .table-box { 
+            width: 100%; 
+            margin-top: 20px; 
+            overflow-x: auto;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            border-radius: 8px; 
+            overflow: hidden;
+            background-color: #fff;
+        }
+        th, td { 
+            border: 1px solid #e1e8ed; 
+            padding: 15px; 
+            text-align: center; 
+        }
+        th { 
+            background-color: #ecf0f1; 
+            font-weight: 700; 
+        }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .flex-container { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 30px; 
+            align-items: flex-start;
+        }
+        .half-width { 
+            flex: 1 1 45%; 
+            min-width: 300px;
+        }
+        .full-width { 
+            flex: 1 1 100%; 
+        }
+        
+        /* 새로운 색상 팔레트 */
+        .color-positive { background-color: #67CA43; } /* 긍정 */
+        .color-negative { background-color: #F57D6E; } /* 부정 */
+        .color-neutral { background-color: #CAC4BC; } /* 중립 */
+
+        /* 텍스트 색상 */
+        .text-positive { color: #67CA43; font-weight: bold; }
+        .text-negative { color: #F57D6E; font-weight: bold; }
+
+        @media (max-width: 768px) {
+            .flex-container { flex-direction: column; }
+            .half-width { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>피씨디렉트 브랜드 평판 보고서 <span style="font-size: 50%;">(2025-08-14 ~ 2025-09-14)</span></h1>
+        
+        <div class="section-box">
+            <h2>주간 주요현황</h2>
+            <p>* 1주일 동안 제이씨현 2건, 대원 2건 게시글이 게시되었습니다.</p>
+            <p>* 제이씨현 '콜센터 서비스 응대원의 불친절한 말투'에 대한 부정적 게시글이 있었습니다.</p>
+            <p>* 당사 특이 이슈 없으며, 최근 기가바이트 '그래픽 카드 써멀젤 관련 이슈'도 제이씨현 관련된 부정 게시글만 관찰됩니다..</p>
+        </div>
+
+        <div class="section-box">
+            <h2>1. 평판 종합 현황</h2>
+            <p></p>
+            <p></p>
+            <div class="flex-container">
+                <div class="half-width">
+                    <h3>유통사별 게시글 건수</h3>
+                    <div class="chart-box">
+                        <canvas id="brandCountsChart"></canvas>
+                    </div>
+                </div>
+                <div class="half-width">
+                    <h3>유형별 게시글 건수</h3>
+                    <div class="table-box">
+                        <table>
+                            <thead>
+                                <tr><th>유통사</th><th>전체</th><th>제품</th><th>서비스</th></tr>
+                            </thead>
+                            <tbody id="brandCountsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <p></p>
+            <p></p>
+            <div class="flex-container">
+                <div class="half-width">
+                    <h3>게시글 평판 비율</h3>
+                    <div class="chart-box" style="height: 300px; padding: 20px;">
+                        <canvas id="overallSentimentChart"></canvas>
+                    </div>
+                </div>
+                <div class="half-width">
+                    <h3>유통사별 긍/부정 비율 상세</h3>
+                    <div class="table-box">
+                        <table>
+                            <thead>
+                                <tr><th>구분</th><th>긍정</th><th>부정</th><th>중립</th></tr>
+                            </thead>
+                            <tbody id="sentimentTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section-box">
+            <h2>2. 유형별 평판 분석</h2>
+            <p></p>
+            <div class="full-width">
+                <h3>제품(브랜드 제조사)에 대한 평판</h3>
+                <p></p>
+                <div class="chart-box">
+                    <canvas id="productSentimentChart"></canvas>
+                </div>
+                <h3>제품(브랜드 제조사) 평판 상세</h3>
+                <div class="table-box">
+                    <table>
+                        <thead>
+                            <tr><th>유통사(제조사 관련)</th><th>긍정</th><th>부정</th><th>중립</th></tr>
+                        </thead>
+                        <tbody id="productTableBody"></tbody>
+                    </table>
+                </div>
+                <p></p>
+            </div>
+            <p></p>
+
+            <div class="full-width">
+                <h3>서비스(유통사) 평판 분석</h3>
+                <p></p>
+                <div class="chart-box">
+                    <canvas id="serviceSentimentChart"></canvas>
+                </div>
+                <p></p>
+                <p></p>
+                <h3>서비스(유통사) 평판 상세</h3>
+                <div class="table-box">
+                    <table>
+                        <thead>
+                            <tr><th>유통사</th><th>긍정</th><th>부정</th><th>중립</th></tr>
+                        </thead>
+                        <tbody id="serviceTableBody"></tbody>
+                    </table>
+                </div>
+                <p></p>
+            </div>
+            <p></p>
+        </div>
+        
+        <div class="section-box">
+        <p></p>
+            <h2>3. 시계열 평판 추이 (주간 단위)</h2>
+            <div class="full-width">
+                <p></p>
+                <h3>주차별 평판 변화 추이</h3>
+                <p></p>
+                <div class="chart-box">
+                    <canvas id="weeklySentimentChart"></canvas>
+                </div>
+            </div>
+            <div class="full-width">
+                <h3>주차별 평판 상세 데이터</h3>
+                <div class="table-box">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th rowspan="2">주차</th>
+                                <th colspan="3">피씨디렉트</th>
+                                <th colspan="3">제이씨현</th>
+                                <th colspan="3">대원</th>
+                                <th colspan="3">인텍</th>
+                                <th colspan="3">코잇</th>
+                            </tr>
+                            <tr>
+                                <th>긍정</th><th>부정</th><th>중립</th>
+                                <th>긍정</th><th>부정</th><th>중립</th>
+                                <th>긍정</th><th>부정</th><th>중립</th>
+                                <th>긍정</th><th>부정</th><th>중립</th>
+                                <th>긍정</th><th>부정</th><th>중립</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weeklyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="section-box">
+            <h2>4. 브랜드별 최근 게시글 (5건)</h2>
+            <div id="recentPostsSection" class="full-width"></div>
+        </div>
+        
+        <p></p>
+    </div>
+    <p></p>
+
+    <script>
+        const reportData = {"brand_counts": {"피씨디렉트": 4, "제이씨현": 8, "대원": 9, "인텍": 3}, "brand_sentiment_ratios": {"피씨디렉트": {"긍정": 50.0, "부정": 0.0, "중립": 50.0}, "제이씨현": {"긍정": 12.5, "부정": 37.5, "중립": 50.0}, "대원": {"긍정": 33.33, "부정": 0.0, "중립": 66.67}, "인텍": {"긍정": 0.0, "부정": 0.0, "중립": 100.0}}, "overall_sentiment": {"긍정": 25.0, "부정": 12.5, "중립": 62.5}, "total_product_service_counts": {"피씨디렉트": {"서비스": 3, "제품": 1}, "제이씨현": {"서비스": 5, "제품": 3}, "대원": {"서비스": 5, "제품": 4}, "인텍": {"서비스": 0, "제품": 3}}, "product_sentiment": {"피씨디렉트": {"긍정": 0, "부정": 0, "중립": 1}, "제이씨현": {"긍정": 0, "부정": 1, "중립": 2}, "대원": {"긍정": 0, "부정": 0, "중립": 4}, "인텍": {"긍정": 0, "부정": 0, "중립": 3}}, "service_sentiment": {"피씨디렉트": {"긍정": 2, "부정": 0, "중립": 1}, "제이씨현": {"긍정": 1, "부정": 2, "중립": 2}, "대원": {"긍정": 3, "부정": 0, "중립": 2}}, "weekly_sentiment": [{"week": "2025-08-11/2025-08-17", "brand": "대원", "긍정": 1, "부정": 0, "중립": 0}, {"week": "2025-08-18/2025-08-24", "brand": "대원", "긍정": 1, "부정": 0, "중립": 0}, {"week": "2025-08-18/2025-08-24", "brand": "인텍", "긍정": 0, "부정": 0, "중립": 1}, {"week": "2025-08-18/2025-08-24", "brand": "제이씨현", "긍정": 0, "부정": 0, "중립": 1}, {"week": "2025-08-25/2025-08-31", "brand": "대원", "긍정": 1, "부정": 0, "중립": 3}, {"week": "2025-08-25/2025-08-31", "brand": "인텍", "긍정": 0, "부정": 0, "중립": 1}, {"week": "2025-08-25/2025-08-31", "brand": "제이씨현", "긍정": 0, "부정": 0, "중립": 1}, {"week": "2025-08-25/2025-08-31", "brand": "피씨디렉트", "긍정": 1, "부정": 0, "중립": 1}, {"week": "2025-09-01/2025-09-07", "brand": "대원", "긍정": 0, "부정": 0, "중립": 1}, {"week": "2025-09-01/2025-09-07", "brand": "인텍", "긍정": 0, "부정": 0, "중립": 1}, {"week": "2025-09-01/2025-09-07", "brand": "제이씨현", "긍정": 1, "부정": 1, "중립": 2}, {"week": "2025-09-01/2025-09-07", "brand": "피씨디렉트", "긍정": 1, "부정": 0, "중립": 1}, {"week": "2025-09-08/2025-09-14", "brand": "대원", "긍정": 0, "부정": 0, "중립": 2}, {"week": "2025-09-08/2025-09-14", "brand": "제이씨현", "긍정": 0, "부정": 2, "중립": 0}], "brand_order": ["피씨디렉트", "제이씨현", "대원", "인텍", "코잇"], "sentiment_order": ["긍정", "부정", "중립"], "recent_posts": {"대원": [{"작성일자": "2025-09-13", "제목": "조탁 및 대원CTS AS준비", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48959888"}, {"작성일자": "2025-09-10", "제목": "대원 9070xt 프라임 구매하신분들 네이버 포인트 받으셨나요??", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48927664"}, {"작성일자": "2025-09-03", "제목": "(AMD 라데온 x 대원씨티에스)", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48846585"}, {"작성일자": "2025-08-28", "제목": "9070xt 스틸레전드 구매 및 대원 a/s 방문 후기", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48785052"}, {"작성일자": "2025-08-28", "제목": "7900xtx 대원CTS 리뷰이벤트 참여", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48788607"}], "인텍": [{"작성일자": "2025-09-04", "제목": "인텍앤컴퍼니 보더랜드4 받으신 분 계신가요", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48857703"}, {"작성일자": "2025-08-25", "제목": "Asus 글카사려는데 대원보단 인텍이 나을까요?", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48748141"}, {"작성일자": "2025-08-21", "제목": "인텍앤컴퍼니 보더랜드4 어떻게 받는 건가요?", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48703686"}], "제이씨현": [{"작성일자": "2025-09-09", "제목": "제이씨현 기준 글카 써멀젤 건수", "분석": "부정", "링크": "https://quasarzone.com/recent/views/all/48912224"}, {"작성일자": "2025-09-08", "제목": "제이씨현 5090 어로스마스터(어마) 리퍼교체 판정 받았습니다..", "분석": "부정", "링크": "https://quasarzone.com/recent/views/all/48896782"}, {"작성일자": "2025-09-06", "제목": "제이씨현 CS이노베이션 메인보드 A/S 후기...", "분석": "긍정", "링크": "https://quasarzone.com/recent/views/all/48883877"}, {"작성일자": "2025-09-04", "제목": "어제 제이씨현 9800X3D AS받은 사람임니다. 초보자 후기남깁니다.", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48859855"}, {"작성일자": "2025-09-03", "제목": "rtx5090 as 제이씨현 후기 충격 (연락이후)", "분석": "부정", "링크": "https://quasarzone.com/recent/views/all/48849707"}], "피씨디렉트": [{"작성일자": "2025-09-05", "제목": "3080 어마 12g 피씨디렉트 맡기고 오는 길 입니다", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48872728"}, {"작성일자": "2025-09-03", "제목": "[5090 어로스 마스터 ]피씨디렉트 as 후기", "분석": "긍정", "링크": "https://quasarzone.com/recent/views/all/48849991"}, {"작성일자": "2025-08-30", "제목": "피씨디렉트 컬러풀 시리얼 조회", "분석": "중립", "링크": "https://quasarzone.com/recent/views/all/48806132"}, {"작성일자": "2025-08-25", "제목": "피씨디렉트,대원cts 수리 다녀왔습니다.ㅠㅠ", "분석": "긍정", "링크": "https://quasarzone.com/recent/views/all/48751217"}]}};
+
+        // 새로운 색상 팔레트
+        const colors = {
+            positive: '#67CA43',
+            negative: '#F57D6E',
+            neutral: '#CAC4BC',
+            bar: '#d4d4d4'
+        };
+
+        // 데이터 시각화 함수
+        function createBarChart(canvasId, labels, data) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '게시글 수',
+                        data: data,
+                        backgroundColor: colors.bar,
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 0.5, // 그래프 높이를 2배로 설정 (1:1 -> 1:2)
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+        
+        function createStackedBarChart(canvasId, labels, datasets, stacked) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 0.5, // 그래프 높이를 2배로 설정
+                    scales: {
+                        x: { stacked: stacked, grid: { display: false } },
+                        y: { stacked: stacked, beginAtZero: true, grid: { display: false } }
+                    }
+                }
+            });
+        }
+        
+        function createSentimentStackedBarChart(canvasId, labels, data) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const datasets = reportData.sentiment_order.map(sentiment => {
+                let color;
+                if (sentiment === '긍정') color = colors.positive;
+                else if (sentiment === '부정') color = colors.negative;
+                else color = colors.neutral;
+
+                return {
+                    label: sentiment,
+                    data: labels.map(label => data[label]?.[sentiment] || 0),
+                    backgroundColor: color
+                };
+            });
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    aspectRatio: 0.5, // 그래프 높이를 2배로 설정
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: true, beginAtZero: true, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function createPieChart(canvasId, data) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: reportData.sentiment_order,
+                    datasets: [{
+                        data: reportData.sentiment_order.map(s => data[s]),
+                        backgroundColor: [colors.positive, colors.negative, colors.neutral],
+                        borderColor: '#fff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+
+        // 1. 전반적인 평판 현황
+        createBarChart('brandCountsChart', Object.keys(reportData.brand_counts), Object.values(reportData.brand_counts));
+
+        const brandCountsTableBody = document.getElementById('brandCountsTableBody');
+        reportData.brand_order.forEach(brand => {
+            const row = brandCountsTableBody.insertRow();
+            row.insertCell(0).innerText = brand;
+            const productCount = reportData.total_product_service_counts[brand]?.['제품'] || 0;
+            const serviceCount = reportData.total_product_service_counts[brand]?.['서비스'] || 0;
+            row.insertCell(1).innerText = productCount + serviceCount;
+            row.insertCell(2).innerText = productCount;
+            row.insertCell(3).innerText = serviceCount;
+        });
+
+        createPieChart('overallSentimentChart', reportData.overall_sentiment);
+        
+        const sentimentTableBody = document.getElementById('sentimentTableBody');
+        const overallRow = sentimentTableBody.insertRow();
+        overallRow.insertCell(0).innerText = '전체';
+        reportData.sentiment_order.forEach((sentiment, i) => {
+            const cell = overallRow.insertCell(i+1);
+            cell.innerText = reportData.overall_sentiment[sentiment] || 0;
+            if (sentiment === '긍정') {
+                cell.classList.add('text-positive');
+            } else if (sentiment === '부정') {
+                cell.classList.add('text-negative');
+            }
+        });
+
+        reportData.brand_order.forEach(brand => {
+            const row = sentimentTableBody.insertRow();
+            row.insertCell(0).innerText = brand;
+            reportData.sentiment_order.forEach((sentiment, i) => {
+                const cell = row.insertCell(i+1);
+                cell.innerText = reportData.brand_sentiment_ratios[brand]?.[sentiment] || 0;
+                if (sentiment === '긍정') {
+                    cell.classList.add('text-positive');
+                } else if (sentiment === '부정') {
+                    cell.classList.add('text-negative');
+                }
+            });
+        });
+        
+        // 2. 부문별 평판 분석
+        const sectorLabels = reportData.brand_order;
+        
+        createSentimentStackedBarChart('productSentimentChart', sectorLabels, reportData.product_sentiment);
+        const productTableBody = document.getElementById('productTableBody');
+        sectorLabels.forEach(brand => {
+            const row = productTableBody.insertRow();
+            row.insertCell(0).innerText = brand;
+            reportData.sentiment_order.forEach((sentiment, i) => {
+                const cell = row.insertCell(i+1);
+                cell.innerText = reportData.product_sentiment[brand]?.[sentiment] || 0;
+                if (sentiment === '긍정') {
+                    cell.classList.add('text-positive');
+                } else if (sentiment === '부정') {
+                    cell.classList.add('text-negative');
+                }
+            });
+        });
+
+        createSentimentStackedBarChart('serviceSentimentChart', sectorLabels, reportData.service_sentiment);
+        const serviceTableBody = document.getElementById('serviceTableBody');
+        sectorLabels.forEach(brand => {
+            const row = serviceTableBody.insertRow();
+            row.insertCell(0).innerText = brand;
+            reportData.sentiment_order.forEach((sentiment, i) => {
+                const cell = row.insertCell(i+1);
+                cell.innerText = reportData.service_sentiment[brand]?.[sentiment] || 0;
+                if (sentiment === '긍정') {
+                    cell.classList.add('text-positive');
+                } else if (sentiment === '부정') {
+                    cell.classList.add('text-negative');
+                }
+            });
+        });
+
+        // 3. 시간별 평판 추이
+        const weeklyLabels = [...new Set(reportData.weekly_sentiment.map(item => item.week))].sort();
+        
+        const weeklyDatasets = reportData.sentiment_order.map(sentiment => {
+            let color;
+            if (sentiment === '긍정') color = colors.positive;
+            else if (sentiment === '부정') color = colors.negative;
+            else color = colors.neutral;
+
+            return {
+                label: sentiment,
+                data: weeklyLabels.map(week => reportData.weekly_sentiment.filter(item => item.week === week).reduce((sum, item) => sum + (item[sentiment] || 0), 0)),
+                backgroundColor: color
+            };
+        });
+        createStackedBarChart('weeklySentimentChart', weeklyLabels, weeklyDatasets, true);
+        
+        const weeklyTableBody = document.getElementById('weeklyTableBody');
+        weeklyLabels.forEach(week => {
+            const row = weeklyTableBody.insertRow();
+            row.insertCell(0).innerText = week;
+            reportData.brand_order.forEach(brand => {
+                const data = reportData.weekly_sentiment.find(item => item.week === week && item.brand === brand) || {};
+                reportData.sentiment_order.forEach((sentiment, i) => {
+                    const cell = row.insertCell(reportData.brand_order.indexOf(brand) * 3 + (i + 1));
+                    cell.innerText = data[sentiment] || 0;
+                    if (sentiment === '긍정') {
+                        cell.classList.add('text-positive');
+                    } else if (sentiment === '부정') {
+                        cell.classList.add('text-negative');
+                    }
+                });
+            });
+        });
+        
+        
+        // 4. 브랜드별 최근 5건 게시글
+        const recentWrap = document.getElementById('recentPostsSection');
+
+        function makeBrandTable(brand, rows) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-box';
+
+            const title = document.createElement('h3');
+            title.textContent = brand;
+            wrapper.appendChild(title);
+
+            const table = document.createElement('table');
+            table.innerHTML = `
+                <thead>
+                    <tr>
+                        <th>작성일자</th><th>제목</th><th>분석</th><th>링크</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>`;
+            const tbody = table.querySelector('tbody');
+
+            (rows || []).forEach(r => {
+            const tr = document.createElement('tr');
+
+            const tdDate = document.createElement('td');
+            tdDate.textContent = r['작성일자'] || '';
+
+            const tdTitle = document.createElement('td');
+            tdTitle.style.textAlign = 'left';
+            tdTitle.textContent = r['제목'] || '';
+
+            const tdAnal = document.createElement('td');
+            const sentiment = (r['분석'] || '').trim();
+            tdAnal.textContent = sentiment;
+            if (sentiment === '긍정') tdAnal.classList.add('text-positive');
+            else if (sentiment === '부정') tdAnal.classList.add('text-negative');
+            // 중립은 색상 없음 (필요하면 .text-neutral 추가해서 쓰면 됩니다)
+
+            const tdLink = document.createElement('td');
+            if (r['링크']) {
+                const a = document.createElement('a');
+                a.href = r['링크'];
+                a.target = '_blank';
+                a.textContent = '바로가기';
+                tdLink.appendChild(a);
+            }
+
+            tr.appendChild(tdDate);
+            tr.appendChild(tdTitle);
+            tr.appendChild(tdAnal);
+            tr.appendChild(tdLink);
+            tbody.appendChild(tr);
+        });
+
+            wrapper.appendChild(table);
+            return wrapper;
+        }
+
+        // 브랜드 순서대로 표 생성
+        (reportData.brand_order || []).forEach(brand => {
+            const rows = (reportData.recent_posts && reportData.recent_posts[brand]) ? reportData.recent_posts[brand] : [];
+            if (rows.length > 0) {
+                recentWrap.appendChild(makeBrandTable(brand, rows));
+            }
+        });
+        
+        
+    </script>
+</body>
+</html>
