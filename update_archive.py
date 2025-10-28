@@ -1,21 +1,33 @@
 import os
+import re
 
-# === 상대경로 기준 설정 ===
-base_dir = os.path.dirname(__file__)              # 현재 파일 기준 폴더
-report_dir = os.path.join(base_dir, "report_pcd") # report_pcd 폴더
+# === 설정 ===
+IFRAME_HEIGHT = 900     # index에서 iframe 높이(px)
+
+# === 경로 설정 (상대경로 기준) ===
+base_dir = os.path.dirname(__file__)
+report_dir = os.path.join(base_dir, "report_pcd")
 os.chdir(base_dir)
 
-# === 최신 리포트 파일 찾기 ===
+# === report_pcd 폴더 내 리포트 파일 수집 ===
 html_files = sorted(
-    [f for f in os.listdir(report_dir) if f.startswith("report_pcd_") and f.endswith(".html")],
+    [f for f in os.listdir(report_dir)
+     if f.startswith("report_pcd_") and f.endswith(".html")],
     reverse=True
 )
-if not html_files:
-    print("⚠️ report_pcd 폴더에 HTML 파일이 없습니다.")
-    exit()
 
-latest_file = html_files[0]
-latest_path = os.path.join(report_dir, latest_file)
+if not html_files:
+    print("⚠️ report_pcd 폴더에 HTML 리포트가 없습니다.")
+    raise SystemExit
+
+# 전체 리포트를 모두 버튼으로 표시
+latest_files = html_files
+latest_default = latest_files[0]
+
+# === YYYYMMDD만 버튼 라벨로 추출 ===
+def yyyymmdd(name: str) -> str:
+    m = re.search(r"(\d{8})", name)
+    return m.group(1) if m else name
 
 # === archive.html 생성 ===
 archive_html = """<html>
@@ -24,12 +36,15 @@ archive_html = """<html>
 <meta name="robots" content="noindex, nofollow">
 <title>Report Archive</title>
 <style>
-  body {{ font-family: Arial, sans-serif; }}
-  ul {{ line-height: 1.8; }}
+  .shell { font-family: Arial, sans-serif; margin: 20px; }
+  .shell ul { line-height: 1.8; }
+  .shell h1 { font-size: 20px; margin: 0 0 10px 0; }
+  .shell a { color: #007bff; text-decoration: none; }
+  .shell a:hover { text-decoration: underline; }
 </style>
 </head>
-<body>
-<h1 style="font-size:20px;">리포트 목록</h1>
+<body class="shell">
+<h1>리포트 목록</h1>
 <ul>
 """
 for f in html_files:
@@ -43,35 +58,66 @@ with open("archive.html", "w", encoding="utf-8") as f:
     f.write(archive_html)
 print("✅ archive.html 생성 완료")
 
-# === 최신 리포트 파일 내용 읽기 ===
-with open(latest_path, "r", encoding="utf-8") as f:
-    latest_content = f.read()
+# === index.html 생성 (버튼 + iframe 방식) ===
+buttons_html = "".join(
+    [f"<button onclick=\"showReport('report_pcd/{f}')\">{yyyymmdd(f)}</button>"
+     for f in latest_files]
+)
 
-# === index.html 생성 (본문 직접 삽입) ===
 index_html = f"""<html>
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow">
-<title>Latest Report (report_pcd)</title>
+<title>최근 리포트</title>
 <style>
-  body {{ font-family: Arial, sans-serif; }}
-  .header-line {{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+  .shell {{
+    font-family: Arial, sans-serif;
+    background:#f9fafc;
+    margin:20px;
   }}
-  h12 {{ font-size: 20px; margin: 5px 0; }}
-  a {{ font-size: 16px; text-decoration: none; color: #007bff; }}
-  hr {{ margin: 8px 0; }}
+  .header-line {{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:10px;
+  }}
+  .header-line h1 {{ font-size:20px; margin:0; color:#222; }}
+  .header-line a {{ font-size:14px; text-decoration:none; color:#007bff; }}
+  .header-line a:hover {{ text-decoration:underline; }}
+  .btns button {{
+    margin:4px; padding:6px 10px; border-radius:5px;
+    border:1px solid #bbb; background:#fff; cursor:pointer; font-size:13px;
+  }}
+  .btns button:hover {{ background:#f0f0f0; }}
+  .btns button.active {{ background:#007bff; color:#fff; border-color:#007bff; }}
+  #reportFrame {{
+    width:100%; height:{IFRAME_HEIGHT}px;
+    border:1px solid #ddd; border-radius:6px; background:#fff;
+  }}
 </style>
+<script>
+function showReport(url) {{
+  var btns = document.querySelectorAll('.btns button');
+  for (var i=0;i<btns.length;i++) btns[i].classList.remove('active');
+  for (var i=0;i<btns.length;i++) if (btns[i].getAttribute('onclick').includes(url)) btns[i].classList.add('active');
+  document.getElementById('reportFrame').src = url;
+  document.getElementById('fallbackLink').href = url;
+}}
+window.onload = function() {{
+  showReport('report_pcd/{latest_default}');
+}};
+</script>
 </head>
-<body>
-<div class="header-line">
-  <h12>최신 리포트</h12>
-  <a href="archive.html">리포트 목록</a>
-</div>
-<hr>
-{latest_content}
+<body class="shell">
+  <div class="header-line">
+    <h1>리포트 전체</h1>
+    <a href="archive.html">리포트 목록</a>
+  </div>
+
+  <div class="btns">{buttons_html}</div>
+
+  <iframe id="reportFrame" src="" frameborder="0"></iframe>
+  <p style="margin-top:8px;">
+    열리지 않으면 <a id="fallbackLink" href="report_pcd/{latest_default}" target="_blank">새 탭으로 열기</a>
+  </p>
 </body>
 </html>
 """
@@ -79,4 +125,4 @@ index_html = f"""<html>
 with open("index.html", "w", encoding="utf-8") as f:
     f.write(index_html)
 
-print(f"✅ index.html 생성 완료 (최신 파일 본문 삽입됨: {latest_file})")
+print(f"✅ index.html 생성 완료 (전체 {len(latest_files)}개 버튼 + iframe 전환, 기본: {latest_default})")
